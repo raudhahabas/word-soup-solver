@@ -1,0 +1,6 @@
+policy,grids,clear_rate,mean_score_with_bonus,mean_score_no_bonus,mean_runtime_sec
+Random,100,0.01,937.7,932.7,0.24
+Greedy-1,100,0.06,1884.65,1854.65,0.364
+Greedy-2,100,0.08,2025.68,1985.68,8.34
+Greedy-3,100,0.1,2131.53,2081.53,101.286
+Hybrid,100,0.87,2391.38,1956.38,21.195

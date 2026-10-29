@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Word Soup Solver</title>
+  <meta name="description" content="Five search-based AI players for the Word Soup puzzle. Watch them play a 12×9 letter grid, or try to beat them yourself.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23e8590c'/%3E%3Ctext x='16' y='23' font-family='Arial' font-weight='700' font-size='20' text-anchor='middle' fill='white'%3EW%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <p class="eyebrow">Final-year project · University of Manchester · 2025/26</p>
+      <h1>Word Soup Solver</h1>
+      <p class="lede">
+        In Word Soup you trace words through a 12×9 grid of letters. Played letters vanish and the rest fall down and to the right, so every word changes which words are left.
+        Clear the whole board for a +500 bonus. I built five AI players with increasing lookahead.
+        Watch them play, or try to beat them yourself.
+      </p>
+      <div class="hero-links">
+        <a class="btn primary" href="https://github.com/raudhahabas/word-soup-solver">View the code on GitHub</a>
+        <a class="btn" href="https://github.com/raudhahabas/word-soup-solver/blob/main/report/Word_Soup_Analysis.pdf">Read the report (PDF)</a>
+      </div>
+      <dl class="stats">
+        <div><dt>Hybrid clear rate</dt><dd>87%</dd></div>
+        <div><dt>Greedy-1 clear rate</dt><dd>6%</dd></div>
+        <div><dt>Random grids tested per player</dt><dd>100</dd></div>
+      </dl>
+      <p class="hint stats-note">Benchmark figures from the report, which used the full game dictionary. The demo below uses the smaller public ENABLE word list, which leaves fewer words to play, so every player clears fewer boards here.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-watch" aria-selected="true" aria-controls="panel-watch">Watch the AI</button>
+      <button role="tab" id="tab-play" aria-selected="false" aria-controls="panel-play">Your turn</button>
+    </div>
+
+    <div class="toolbar">
+      <label>Grid
+        <select id="grid-select"></select>
+      </label>
+      <span class="hint" id="grid-note"></span>
+    </div>
+
+    <!-- Watch -->
+    <section id="panel-watch" role="tabpanel" aria-labelledby="tab-watch">
+      <div class="players" id="player-buttons" role="radiogroup" aria-label="Player"></div>
+      <p class="player-desc" id="player-desc"></p>
+
+      <div class="stage">
+        <div class="board-col">
+          <div class="board" id="watch-board"></div>
+          <div class="controls">
+            <button class="btn primary" id="btn-play">Play</button>
+            <button class="btn" id="btn-step">Step</button>
+            <button class="btn" id="btn-reset">Reset</button>
+            <label class="speed">Speed <input type="range" id="speed" min="0.5" max="4" step="0.5" value="1.5"></label>
+          </div>
+        </div>
+        <aside class="side">
+          <div class="scorecard">
+            <div><span class="label">Score</span><span class="big" id="watch-score">0</span></div>
+            <div><span class="label">Tiles left</span><span class="big" id="watch-tiles">108</span></div>
+          </div>
+          <div class="status" id="watch-status"></div>
+          <ol class="moves" id="watch-moves"></ol>
+        </aside>
+      </div>
+
+      <h2>All players on this grid</h2>
+      <div class="table-wrap">
+        <table class="compare">
+          <thead><tr><th>Player</th><th>Cleared</th><th>Words</th><th class="num">Score</th><th class="num">Think time</th></tr></thead>
+          <tbody id="compare-body"></tbody>
+        </table>
+      </div>
+      <p class="footnote" id="compare-note"></p>
+    </section>
+
+    <!-- Play -->
+    <section id="panel-play" role="tabpanel" aria-labelledby="tab-play" hidden>
+      <p class="player-desc">Click or drag across adjacent letters (diagonals count) to spell a word of 3+ letters, then press <b>Play word</b>. Score = word length × letter points.</p>
+      <div class="stage">
+        <div class="board-col">
+          <div class="board" id="play-board"></div>
+          <div class="current" id="play-current">&nbsp;</div>
+          <div class="controls">
+            <button class="btn primary" id="btn-submit">Play word</button>
+            <button class="btn" id="btn-clear">Clear</button>
+            <button class="btn" id="btn-hint">Hint</button>
+            <button class="btn" id="btn-restart">Restart</button>
+          </div>
+        </div>
+        <aside class="side">
+          <div class="scorecard">
+            <div><span class="label">Your score</span><span class="big" id="play-score">0</span></div>
+            <div><span class="label">To beat (Hybrid)</span><span class="big" id="play-target">–</span></div>
+          </div>
+          <div class="status" id="play-status">Loading dictionary…</div>
+          <ol class="moves" id="play-moves"></ol>
+        </aside>
+      </div>
+    </section>
+
+    <section class="how">
+      <h2>How the players work</h2>
+      <div class="cards">
+        <article>
+          <h3>Finding words fast</h3>
+          <p>A depth-first search traces paths from every tile. A <b>trie</b> (prefix tree) of about 170,000 words cuts off a path the moment its letters stop being the start of a real word, so the search skips almost all dead ends.</p>
+        </article>
+        <article>
+          <h3>Greedy n-ply</h3>
+          <p><b>Greedy-1</b> takes the best-scoring word right now. <b>Greedy-2</b> and <b>Greedy-3</b> look 2 or 3 moves ahead (top 20 words per step) and favour lines that clear the board. Greedy-3 is ~280× slower than Greedy-1 but clears only a few more boards.</p>
+        </article>
+        <article>
+          <h3>Hybrid rollout</h3>
+          <p>Shortlist the 20 best moves, then <b>play each one out to the end</b> with a fast greedy policy and keep the line that clears the board with the most points. It looks deeper as the board empties. Result: <b>87%</b> of boards cleared, compared with 6–10% for the greedy players.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="wrap">
+    <p>Built by Siti Abas · Supervisor: Dr Neil Morrison · Dictionary for this demo: ENABLE (public domain).
+      Players are written in Python. This page replays their recorded games and checks your words in the browser.</p>
+  </footer>
+
+  <script src="app.js?v=2"></script>
+</body>
+</html>

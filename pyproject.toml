@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wordsoup"
+version = "1.0.0"
+description = "Search-based players (greedy n-ply and rollout hybrid) for the Word Soup puzzle"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Siti Abas" }]
+license = { text = "MIT" }
+dependencies = []
+
+[project.optional-dependencies]
+analysis = ["pandas", "matplotlib"]
+dev = ["pytest"]
+
+[project.scripts]
+wordsoup = "wordsoup.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
